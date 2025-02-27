@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "start": "nodemon --exec ts-node src/main.ts"
+  },
   "dependencies": {
     "@nestjs/common": "^11.0.10",
     "@nestjs/core": "^11.0.10",
