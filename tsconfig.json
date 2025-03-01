@@ -17,5 +17,9 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
+    "baseUrl": "./",
+    "paths": {
+      "@nestjs/*": ["src/@nestjs/*"], // 切换源码和自己的方便点
+    },
   }
 }
