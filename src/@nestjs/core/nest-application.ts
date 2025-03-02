@@ -4,7 +4,11 @@ import path from 'path'
 export class NestApplication {
   // 内部私有化一个express实例
   private readonly expressApp: Express = express();
-  constructor(protected readonly module) {} 
+  constructor(protected readonly module) {
+    // 用来将JSON格式的请求体对象绑定到req.body上
+    this.expressApp.use(express.json()); // 使用express内置的json中间件
+    this.expressApp.use(express.urlencoded({extended:true})); // 使用express内置的urlencoded中间件
+  } 
   use(middleware: any) {
     // 使用express实例的use方法，将中间件注册到express实例上
     this.expressApp.use(middleware);
@@ -36,20 +40,29 @@ export class NestApplication {
         // 配置路由，当客户端以httpMethod请求routePath时，执行对应路径的函数进行处理
         this.expressApp[httpMethod.toLowerCase()](routePath,(req:ExpressRequest,res:ExpressResponse,next:NextFunction)=>{
           const args = this.resolveParams(controller,methodName,req,res,next);
+          // 执行路由处理函数，获取返回值
           const result = method.call(controller,...args);
-          res.send(result)
+          // 把序列化后的结果返回给客户端
+          const responseMeta = this.getResponseMeta(controller,methodName);
+          if (!responseMeta || (responseMeta?.data?.passthrough)) { // 判断controller的methodName上有没有使用@Response/@Res装饰器，如果使用则挂起服务交由用户自己返回;但是注入了passthrough参数，nest会自动返回
+            res.send(result);
+          }
         })
         Logger.log(`Mapped {${routePath}, ${httpMethod}} route`, 'RoutesResolver');
       }
     }
     Logger.log(`AppModule dependencies initialized`, 'InstanceLoader');
   }
+  private getResponseMeta(controller:any,methodName:string) {
+    const paramsMetaData = Reflect.getMetadata(`params`,controller,methodName)??[];
+    return paramsMetaData.filter(Boolean).find((item:any)=>item.key === 'Response' || item.key === 'Res');
+  }
   private resolveParams(instance:any,methodName:string,req:ExpressRequest,res:ExpressResponse,next:NextFunction) {
     // 获取参数的元数据
     const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName)??[]; // 避免一个参数装饰器都没使用报错
     // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
     return paramsMetaData.map(paramsMetaData=>{
-      const {key,data} = paramsMetaData;
+      const {key,data} = paramsMetaData; // {passthrough:true}
       switch(key) {
         case "Request":
         case "Req":
@@ -64,6 +77,11 @@ export class NestApplication {
           return req.ip;
         case "Param":
           return data?req.params[data]:req.params;
+        case "Body":
+          return data?req.body[data]:req.body;
+        case "Response":
+        case "Res":
+          return res;
         default: 
           return null;
       }

@@ -22,3 +22,6 @@ export const Headers = createParamDecorator("Headers");
 export const Session = createParamDecorator("Session");
 export const Ip = createParamDecorator("Ip");
 export const Param = createParamDecorator("Param");
+export const Body = createParamDecorator("Body");
+export const Response = createParamDecorator("Response");
+export const Res = createParamDecorator("Res");
