@@ -45,7 +45,7 @@ export class NestApplication {
     // 获取参数的元数据
     const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName);
     // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
-    return paramsMetaData.sort((a,b)=>a.parameterIndex-b.parameterIndex).map(paramsMetaData=>{
+    return paramsMetaData.map(paramsMetaData=>{
       const {key} = paramsMetaData;
       switch(key) {
         case "Request":

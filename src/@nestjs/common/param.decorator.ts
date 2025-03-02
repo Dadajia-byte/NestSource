@@ -6,8 +6,10 @@ export const createParamDecorator=(key:string)=> {
     // 给控制器类的原型的propertykey也就是handleRequest方法属性上添加元数据
     // 属性名是params：handleRequest的值是一个数组，数组里应该放置数据，表示哪个位置使用哪个装饰器
     const existingParameters = Reflect.getMetadata(`params`,target,propertyKey) || [];
-    existingParameters.push({parameterIndex,key});
-    // existingParameters[parameterIndex] = key;
+    existingParameters[parameterIndex] = {
+      parameterIndex,
+      key
+    }; // 避免某参数不使用装饰器而出现的错误
     Reflect.defineMetadata(`params`,existingParameters,target,propertyKey);
   }
 }
