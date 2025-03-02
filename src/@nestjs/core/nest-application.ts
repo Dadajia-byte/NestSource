@@ -15,7 +15,7 @@ export class NestApplication {
       // 创建每个控制器的实例
       const controller = new Controller();  
       // 取出控制器的路径前缀
-      const prefix = Reflect.getMetadata('prefix', Controller) || '/';
+      const prefix = Reflect.getMetadata('pathPrefix', Controller) || '/';
       // 开始解析路由
       Logger.log(`${Controller.name} {${prefix}}`, 'RoutesResolver');
  
@@ -31,14 +31,30 @@ export class NestApplication {
         if (!httpMethod) continue; // 如果没有方法名，跳过
         const routePath = path.posix.join('/',prefix,pathMetadata); // 使用内置的path模块处理，可以超级智能的处理路径
         // 配置路由，当客户端以httpMethod请求routePath时，执行对应路径的函数进行处理
-        this.expressApp[httpMethod.toLowerCase()](routePath,(res:ExpressResponse,req:ExpressRequest,next:NextFunction)=>{
-          const result = method.call(controller);
+        this.expressApp[httpMethod.toLowerCase()](routePath,(req:ExpressRequest,res:ExpressResponse,next:NextFunction)=>{
+          const args = this.resolveParams(controller,methodName,req,res,next);
+          const result = method.call(controller,...args);
           res.send(result)
         })
         Logger.log(`Mapped {${routePath}, ${httpMethod}} route`, 'RoutesResolver');
       }
-      Logger.log(`AppModule dependencies initialized`, 'InstanceLoader');
     }
+    Logger.log(`AppModule dependencies initialized`, 'InstanceLoader');
+  }
+  private resolveParams(instance:any,methodName:string,req:ExpressRequest,res:ExpressResponse,next:NextFunction) {
+    // 获取参数的元数据
+    const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName);
+    // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
+    return paramsMetaData.sort((a,b)=>a.parameterIndex-b.parameterIndex).map(paramsMetaData=>{
+      const {key} = paramsMetaData;
+      switch(key) {
+        case "Request":
+        case "Req":
+          return req;
+        default: 
+          return null;
+      }
+    });
   }
   // 启动http服务器
   async listen(port:number|string, callback?:() => void) {

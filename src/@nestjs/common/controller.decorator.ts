@@ -15,7 +15,6 @@ export function Controller(prefixOrOptions?:string|ControllerOptions):ClassDecor
     options = prefixOrOptions
   }
   return (target:Function)=>{
-    Reflect.defineMetadata('path', options.prefix, target); // 给控制器类添加元数据
+    Reflect.defineMetadata('pathPrefix', options.prefix, target); // 给控制器类添加元数据
   }
-  
 }
