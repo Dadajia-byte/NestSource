@@ -46,7 +46,7 @@ export class NestApplication {
   }
   private resolveParams(instance:any,methodName:string,req:ExpressRequest,res:ExpressResponse,next:NextFunction) {
     // 获取参数的元数据
-    const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName);
+    const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName)??[]; // 避免一个参数装饰器都没使用报错
     // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
     return paramsMetaData.map(paramsMetaData=>{
       const {key,data} = paramsMetaData;
@@ -62,6 +62,8 @@ export class NestApplication {
           return data?req.session[data]:req.session;
         case "Ip":
           return req.ip;
+        case "Param":
+          return data?req.params[data]:req.params;
         default: 
           return null;
       }
