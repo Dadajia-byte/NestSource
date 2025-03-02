@@ -46,11 +46,15 @@ export class NestApplication {
     const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName);
     // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
     return paramsMetaData.map(paramsMetaData=>{
-      const {key} = paramsMetaData;
+      const {key,data} = paramsMetaData;
       switch(key) {
         case "Request":
         case "Req":
           return req;
+        case "Query":
+          return data?req.query[data]:req.query;
+        case "Headers":
+          return data?req.headers[data]:req.headers;
         default: 
           return null;
       }
