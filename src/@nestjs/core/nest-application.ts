@@ -4,8 +4,11 @@ import path from 'path'
 export class NestApplication {
   // 内部私有化一个express实例
   private readonly expressApp: Express = express();
-  constructor(protected readonly module) {
-  } 
+  constructor(protected readonly module) {} 
+  use(middleware: any) {
+    // 使用express实例的use方法，将中间件注册到express实例上
+    this.expressApp.use(middleware);
+  }
   // 配置初始化
   async init() {
     // 取出模块里所有的控制器，然后做好路由映射
@@ -55,6 +58,10 @@ export class NestApplication {
           return data?req.query[data]:req.query;
         case "Headers":
           return data?req.headers[data]:req.headers;
+        case "Session":
+          return data?req.session[data]:req.session;
+        case "Ip":
+          return req.ip;
         default: 
           return null;
       }
