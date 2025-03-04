@@ -19,6 +19,26 @@ export function Post(path:string=''):MethodDecorator {
   }
 }
 
+export function Redirect(url:string='/',statusCode:number=302):MethodDecorator {
+  return (target:any, propertyKey:string, descriptor:PropertyDescriptor)=>{
+    Reflect.defineMetadata('redirectUrl', url, descriptor.value);
+    Reflect.defineMetadata('redirectStatusCode', statusCode, descriptor.value);
+  }
+}
+
+export function HttpCode(statusCode:number=200):MethodDecorator {
+  return (target:any, propertyKey:string, descriptor:PropertyDescriptor)=>{
+    Reflect.defineMetadata('statusCode', statusCode, descriptor.value);
+  }
+}
+export function Header(key:string,value:string):MethodDecorator {
+  return (target:any, propertyKey:string, descriptor:PropertyDescriptor)=>{
+    const headers = Reflect.getMetadata('headers', descriptor.value) ?? [];
+    headers.push({key,value});
+    Reflect.defineMetadata('headers', headers, descriptor.value);
+  }
+}
+
 export function Put(path:string=''):MethodDecorator {
   return (target:any, propertyKey:string, descriptor:PropertyDescriptor)=>{
     Reflect.defineMetadata('path', path, descriptor.value);

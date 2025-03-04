@@ -1,5 +1,5 @@
-import { Controller, Get, Req, Request,Query,Headers,Session,Ip,Param,Post,Body,Response } from "@nestjs/common";
-import {Request as ExpressRequest, Response as ExpressResponse} from "express"
+import { Controller, Get, Req, Request,Query,Headers,Session,Ip,Param,Post,Body,Response,Next,Redirect,HttpCode,Header } from "@nestjs/common";
+import {Request as ExpressRequest, Response as ExpressResponse, NextFunction} from "express"
 @Controller('users')
 export class UserController {
   @Get('req')
@@ -65,6 +65,28 @@ export class UserController {
     response.setHeader('x-powered-by','NestJs');
     // 还是想返回一个值，让nest帮我发送响应体操作,那么就需要使用passthrough:true
     return 'handlePassthrough';
+  }
+  @Post('next')
+  next(@Next() next:NextFunction) {
+    console.log('next',next);
+    next();
+    // return 'next';
+  }
+  @Get('redirect')
+  @Redirect('/users/req',301)
+  handleRedirect() {}
+
+  @Get('redirect1')
+  handleRedirect1(@Query('url') url) {
+    return {url,statusCode:301}
+  }
+
+  @Post('httpcode') // POST默认返回201状态码
+  @HttpCode(203) // 通过HttpCode装饰器修改状态码
+  @Header('Cache-Control','no-cache') // 通过Headers装饰器添加响应头
+  @Header('x-powered-by','NestJs')
+  handleHttpCode() {
+    return 'handleHttpCode';
   }
 }
 /**

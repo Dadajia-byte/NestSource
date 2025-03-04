@@ -13,6 +13,4 @@ export class Logger {
     console.log(`[${clc.green('Nest')}] ${clc.green(pid.toString())}  - ${clc.yellow(timestamp)}  ${clc.green('LOG ')} [${clc.yellow(context)}]  ${clc.green(message)} +${clc.green(diff.toString())}ms`);
     this.lastTimestamp = currentTimestamp
   }
-
-
 }

@@ -25,7 +25,6 @@ export class NestApplication {
       const prefix = Reflect.getMetadata('pathPrefix', Controller) || '/';
       // 开始解析路由
       Logger.log(`${Controller.name} {${prefix}}`, 'RoutesResolver');
- 
       const controllPrototype = Reflect.getPrototypeOf(controller);
       // 遍历类原型上的方法名
       for (const methodName of Object.getOwnPropertyNames(controllPrototype)) {
@@ -34,7 +33,10 @@ export class NestApplication {
         // 获取方法上的元数据(方法名，请求方法，请求路径)
         const httpMethod = Reflect.getMetadata('method', method);
         const pathMetadata = Reflect.getMetadata('path', method);
-
+        const redirectUrl = Reflect.getMetadata('redirectUrl', method);
+        const redirectStatusCode = Reflect.getMetadata('redirectStatusCode', method);
+        const statusCode = Reflect.getMetadata('statusCode', method);
+        const headers = Reflect.getMetadata('headers', method);
         if (!httpMethod) continue; // 如果没有方法名，跳过
         const routePath = path.posix.join('/',prefix,pathMetadata); // 使用内置的path模块处理，可以超级智能的处理路径
         // 配置路由，当客户端以httpMethod请求routePath时，执行对应路径的函数进行处理
@@ -42,9 +44,24 @@ export class NestApplication {
           const args = this.resolveParams(controller,methodName,req,res,next);
           // 执行路由处理函数，获取返回值
           const result = method.call(controller,...args);
+          if(result?.url) {
+            return res.redirect(result.statusCode||301,result.url);
+          }
+          // 如果需要重定向，则直接定向到指定的url地址
+          if(redirectUrl) {
+            return res.redirect(redirectStatusCode||302,redirectUrl);
+          }
+          if (statusCode) { // httpCode装饰器优先修改状态码
+            res.statusCode = statusCode
+          } else if(httpMethod ==='POST') { // 如果是post请求，默认返回201状态码
+            res.statusCode = 201;
+          }
           // 把序列化后的结果返回给客户端
           const responseMeta = this.getResponseMeta(controller,methodName);
           if (!responseMeta || (responseMeta?.data?.passthrough)) { // 判断controller的methodName上有没有使用@Response/@Res装饰器，如果使用则挂起服务交由用户自己返回;但是注入了passthrough参数，nest会自动返回
+            headers.forEach(({key,value}) => {
+              res.setHeader(key,value);
+            });
             res.send(result);
           }
         })
@@ -55,7 +72,7 @@ export class NestApplication {
   }
   private getResponseMeta(controller:any,methodName:string) {
     const paramsMetaData = Reflect.getMetadata(`params`,controller,methodName)??[];
-    return paramsMetaData.filter(Boolean).find((item:any)=>item.key === 'Response' || item.key === 'Res');
+    return paramsMetaData.filter(Boolean).find((item:any)=>item.key === 'Response' || item.key === 'Res' || item.key === 'Next');
   }
   private resolveParams(instance:any,methodName:string,req:ExpressRequest,res:ExpressResponse,next:NextFunction) {
     // 获取参数的元数据
@@ -82,6 +99,8 @@ export class NestApplication {
         case "Response":
         case "Res":
           return res;
+        case "Next":
+          return next;
         default: 
           return null;
       }
