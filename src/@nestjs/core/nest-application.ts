@@ -8,6 +8,13 @@ export class NestApplication {
     // 用来将JSON格式的请求体对象绑定到req.body上
     this.expressApp.use(express.json()); // 使用express内置的json中间件
     this.expressApp.use(express.urlencoded({extended:true})); // 使用express内置的urlencoded中间件
+    this.expressApp.use((req:any,res,next)=>{
+      req.user = {
+        name:'zhangsan',
+        age:18
+      }
+      next();
+    })
   } 
   use(middleware: any) {
     // 使用express实例的use方法，将中间件注册到express实例上
@@ -36,7 +43,7 @@ export class NestApplication {
         const redirectUrl = Reflect.getMetadata('redirectUrl', method);
         const redirectStatusCode = Reflect.getMetadata('redirectStatusCode', method);
         const statusCode = Reflect.getMetadata('statusCode', method);
-        const headers = Reflect.getMetadata('headers', method);
+        const headers = Reflect.getMetadata('headers', method) ?? [];
         if (!httpMethod) continue; // 如果没有方法名，跳过
         const routePath = path.posix.join('/',prefix,pathMetadata); // 使用内置的path模块处理，可以超级智能的处理路径
         // 配置路由，当客户端以httpMethod请求routePath时，执行对应路径的函数进行处理
@@ -78,8 +85,16 @@ export class NestApplication {
     // 获取参数的元数据
     const paramsMetaData = Reflect.getMetadata(`params`,instance,methodName)??[]; // 避免一个参数装饰器都没使用报错
     // 将数组升序排列，随后找出对应的key，如果是req则返回 request对象
-    return paramsMetaData.map(paramsMetaData=>{
-      const {key,data} = paramsMetaData; // {passthrough:true}
+    return paramsMetaData.map((paramsMetaData:any )=>{
+      const {key,data,factory} = paramsMetaData; // {passthrough:true}
+      const ctx = { // 因为Nest不但支持http，还支持graphql 微服务 websocket rpc
+        switchToHttp:()=>({
+            getRequest:()=>req,
+            getResponse:()=>res,
+            getNext:()=>next,
+          }
+        ),
+      }
       switch(key) {
         case "Request":
         case "Req":
@@ -101,6 +116,8 @@ export class NestApplication {
           return res;
         case "Next":
           return next;
+        case "DecoratorFactory": // 如果是自定义装饰器工厂
+          return factory(data,ctx);
         default: 
           return null;
       }

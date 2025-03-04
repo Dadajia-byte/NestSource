@@ -1,5 +1,6 @@
 import { Controller, Get, Req, Request,Query,Headers,Session,Ip,Param,Post,Body,Response,Next,Redirect,HttpCode,Header } from "@nestjs/common";
 import {Request as ExpressRequest, Response as ExpressResponse, NextFunction} from "express"
+import { User } from "./user.decorator";
 @Controller('users')
 export class UserController {
   @Get('req')
@@ -87,6 +88,11 @@ export class UserController {
   @Header('x-powered-by','NestJs')
   handleHttpCode() {
     return 'handleHttpCode';
+  }
+
+  @Post('custom')
+  customParamDecorator(@User('name') name:string ,@User('age') age:number) {
+    return name + age;
   }
 }
 /**
