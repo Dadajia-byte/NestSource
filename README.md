@@ -9,3 +9,12 @@
 |ts-node|一个 TypeScript 执行引擎，允许直接运行 TS 代码而无需预先编译|
 |tsconfig-paths|一个工具，用于解析 TS 配置文件中的路径映射，支持模块路径的别名|
 |typescript|TS 的编译器，提供静态类型检查和最新的 JS 特性|
+
+#### Decorator stage3
+- TS5.x 就使用 stage3 的写法了
+- 关闭 tsconfig文件中的 `"emitDecoratorMetadata": fales` 和 `"experimentalDecorators": true,` 实现
+
+#### intelliSense
+- 指的是 vscode 智能代码补全功能，也可以进行错误检查
+- vscode 内部使用 tsServer服务器调用 tsdlk 检查
+- 具体的tsdlk文件配置检查，可以右下角选择配置，也可以自己配
