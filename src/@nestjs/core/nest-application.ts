@@ -1,6 +1,7 @@
 import express,{Express,Request as ExpressRequest,Response as ExpressResponse,NextFunction} from 'express'
 import { Logger } from "./logger";
 import path from 'path'
+import { DESIGN_PARAM_TYPES, INJECT_TOKENS } from '@nestjs/common';
 export class NestApplication {
   // 内部私有化一个express实例
   private readonly expressApp: Express = express();
@@ -20,14 +21,26 @@ export class NestApplication {
     // 使用express实例的use方法，将中间件注册到express实例上
     this.expressApp.use(middleware);
   }
+  private resolveDependencies(Controller:any) {
+    Reflect.getMetadata(INJECT_TOKENS, Controller) ?? []; // 取得注入的token
+    const constructorParams = Reflect.getMetadata(DESIGN_PARAM_TYPES, Controller) ?? []; // 取得构造函数的参数
+    return constructorParams.map((param,index)=>{
+      const token = Reflect.getMetadata(INJECT_TOKENS,Controller)[index];
+      if(token) {
+        return new token();
+      }
+      return param;
+    })
+  }
   // 配置初始化
   async init() {
     // 取出模块里所有的控制器，然后做好路由映射
-    const controlllers = Reflect.getMetadata('controllers', this.module) || [];
+    const controlllers = Reflect.getMetadata('controllers', this.module) ?? [];
     Logger.log(`AppModule dependencies initialized`, 'NestApplication');
     for (const Controller of controlllers) {
+      const dependencies = this.resolveDependencies(Controller);
       // 创建每个控制器的实例
-      const controller = new Controller();  
+      const controller = new Controller(...dependencies);  
       // 取出控制器的路径前缀
       const prefix = Reflect.getMetadata('pathPrefix', Controller) || '/';
       // 开始解析路由

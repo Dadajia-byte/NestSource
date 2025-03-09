@@ -18,3 +18,8 @@
 - 指的是 vscode 智能代码补全功能，也可以进行错误检查
 - vscode 内部使用 tsServer服务器调用 tsdlk 检查
 - 具体的tsdlk文件配置检查，可以右下角选择配置，也可以自己配
+
+#### Provider
+- 定义provider类
+- 在module里注册provider类
+- 在控制里面声明或者使用provider类
