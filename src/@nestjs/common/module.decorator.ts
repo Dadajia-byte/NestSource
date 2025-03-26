@@ -2,7 +2,7 @@ import 'reflect-metadata'
 // 模块的元数据
 interface ModuleMetadata {
   controllers?: Function[],
-  providers?: Function[]
+  providers?: any[]
 }
 // 模块装饰器
 export function Module(metadata:ModuleMetadata): ClassDecorator {

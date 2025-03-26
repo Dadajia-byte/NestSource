@@ -22,4 +22,14 @@
 #### Provider
 - 定义provider类
 - 在module里注册provider类
-- 在控制里面声明或者使用provider类
+- 在控制器里面声明或者使用provider类
+
+#### 结构
+
+所谓的 module 其实是一个 DIContainer，用于管理 controller 和 provider；在 module 中写明 provider 相当于注册服务，随后根据 controller 中的 constructor 的参数来依次注入服务到对应 controller中。
+
+在注入的过程中，其中包含 普通构造函数的注入 和 @Inject token注入，区别如下：
+
+- 普通构造函数基于**类型自动解析**，@Inject注入基于**标识符token**解析
+- 普通构造函数注入适用于**注入类服务**，@Inject注入适用于**注入非类对象、动态服务或区分多个服务**
+- 普通构造函数其实是语法糖，他的 token 值其实是类本身

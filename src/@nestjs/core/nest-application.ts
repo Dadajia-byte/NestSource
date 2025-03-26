@@ -23,9 +23,9 @@ export class NestApplication {
   }
   private resolveDependencies(Controller:any) {
     Reflect.getMetadata(INJECT_TOKENS, Controller) ?? []; // 取得注入的token
-    const constructorParams = Reflect.getMetadata(DESIGN_PARAM_TYPES, Controller) ?? []; // 取得构造函数的参数
+    const constructorParams = Reflect.getMetadata(DESIGN_PARAM_TYPES, Controller) ?? []; // 取得构造函数的参数（全的，不管是@inject还是普通的）
     return constructorParams.map((param,index)=>{
-      const token = Reflect.getMetadata(INJECT_TOKENS,Controller)[index];
+      const token = Reflect.getMetadata(INJECT_TOKENS,Controller)[index]; // 拿到inject注入的
       if(token) {
         return new token();
       }
