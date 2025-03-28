@@ -34,7 +34,8 @@ export class NestApplication {
         this.providers.set(provider.provide, provider.useFactory(...inject.map(this.getProviderByToken))); // 此处的函数可能也要注入参数
       }else {
         // 提供的是一个类，直接实例化，将本身作为token
-        this.providers.set(provider, new provider());
+        const dependencies = this.resolveDependencies(provider);
+        this.providers.set(provider, new provider(...dependencies));
       }
     }
   }
