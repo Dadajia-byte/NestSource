@@ -5,6 +5,8 @@ import { DESIGN_PARAM_TYPES, INJECT_TOKENS } from '@nestjs/common';
 export class NestApplication {
   // 内部私有化一个express实例
   private readonly expressApp: Express = express();
+  // 在此处保存全部的providers
+  private readonly providers = new Map();
   constructor(protected readonly module) {
     // 用来将JSON格式的请求体对象绑定到req.body上
     this.expressApp.use(express.json()); // 使用express内置的json中间件
@@ -15,21 +17,40 @@ export class NestApplication {
         age:18
       }
       next();
-    })
+    });
+    this.initProviders();; // 注入providers
   } 
+  initProviders() {
+    const providers = Reflect.getMetadata('providers', this.module) ?? []; // 取得注入的providers
+    for (const provider of providers) {
+      if (provider.provide && provider.useClass) { // 提供的是一个类,其中这里的provide啥都行，可以是类，字符串什么的，作为token存在
+        const dependencies = this.resolveDependencies(provider.useClass); // 递归处理
+        const classInstance = new provider.useClass(...dependencies); // 这里的useClass是一个类
+        this.providers.set(provider.provide, classInstance); // 保存
+      } else if (provider.provide && provider.useValue) { // 提供的是一个值
+        this.providers.set(provider.provide, provider.useValue);
+      } else if(provider.provide && provider.useFactory) {
+        const inject = provider.inject ?? []; // 取得对应的参数
+        this.providers.set(provider.provide, provider.useFactory(...inject.map(this.getProviderByToken))); // 此处的函数可能也要注入参数
+      }else {
+        // 提供的是一个类，直接实例化，将本身作为token
+        this.providers.set(provider, new provider());
+      }
+    }
+  }
   use(middleware: any) {
     // 使用express实例的use方法，将中间件注册到express实例上
     this.expressApp.use(middleware);
   }
-  private resolveDependencies(Controller:any) {
-    Reflect.getMetadata(INJECT_TOKENS, Controller) ?? []; // 取得注入的token
-    const constructorParams = Reflect.getMetadata(DESIGN_PARAM_TYPES, Controller) ?? []; // 取得构造函数的参数（全的，不管是@inject还是普通的）
+  private getProviderByToken(injectedToken) {
+    return this.providers.get(injectedToken) ?? injectedToken; // 如果没有找到对应的provider，则返回token本身
+  }
+  private resolveDependencies(Class) {
+    const injectedTokens = Reflect.getMetadata(INJECT_TOKENS, Class) ?? []; // 取得注入的token
+    const constructorParams = Reflect.getMetadata(DESIGN_PARAM_TYPES, Class) ?? []; // 取得构造函数的参数（全的，不管是@inject还是普通的）
     return constructorParams.map((param,index)=>{
-      const token = Reflect.getMetadata(INJECT_TOKENS,Controller)[index]; // 拿到inject注入的
-      if(token) {
-        return new token();
-      }
-      return param;
+      // 把每个param中的token默认换成对应的provider值
+      return this.getProviderByToken(injectedTokens[index]?? param);
     })
   }
   // 配置初始化
