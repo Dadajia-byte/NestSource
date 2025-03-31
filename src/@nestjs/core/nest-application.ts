@@ -21,8 +21,17 @@ export class NestApplication {
     this.initProviders();; // 注入providers
   } 
   initProviders() {
+    // 遍历所有导入的模块
+    const imports = Reflect.getMetadata('imports', this.module) ?? []; // 取得导入的模块
+    for (const module of imports) {
+      // 递归注册导入的模块
+      this.regiseterProvidersFromModule(module); // 注册导入的模块
+    }
     const providers = Reflect.getMetadata('providers', this.module) ?? []; // 取得注入的providers
     for (const provider of providers) {
+        this.addProvider(provider);
+    }
+    /* for (const provider of providers) {
       if (provider.provide && provider.useClass) { // 提供的是一个类,其中这里的provide啥都行，可以是类，字符串什么的，作为token存在
         const dependencies = this.resolveDependencies(provider.useClass); // 递归处理
         const classInstance = new provider.useClass(...dependencies); // 这里的useClass是一个类
@@ -37,8 +46,52 @@ export class NestApplication {
         const dependencies = this.resolveDependencies(provider);
         this.providers.set(provider, new provider(...dependencies));
       }
+    } */
+  }
+  private regiseterProvidersFromModule(module) {
+    // 拿到导入的模块 providers 进行全量注册
+    const importedProviders = Reflect.getMetadata('providers', module) ?? [];
+    // 1. 有可能导入的模块只导出了一部分，并没有全量导出，所以需要使用exports进行过滤
+    const exports = Reflect.getMetadata('exports', module) ?? [];
+    // 遍历导出的exports 数组
+    for(const exportsToken of exports) {
+      // 2. exports 里可能还有module
+      if (this.isModule(exportsToken)) {
+        // 执行递归操作
+        this.regiseterProvidersFromModule(exportsToken);
+      } else {
+        const provider = importedProviders.find((item) => item.provide === exportsToken || provider.provide); // 找到对应的provider
+        if (provider) {
+          this.addProvider(provider);
+        }
+      }
     }
   }
+  private isModule(exportsToken) {
+    // 判断exportsToken是不是一个module
+    return exportsToken && exportsToken instanceof Function && Reflect.getMetadata('isModule', exportsToken);
+  }
+  addProvider(provider) {
+    // 为了避免循环依赖，每次添加前做一个判断，如果map中已经存在了，则直接返回
+    // const injectedToken = provider.provide ?? provider;
+    // if (this.providers.has(injectedToken)) return;
+    // 如果有provider的token，并且有useClass，则说明是一个类，需要实例化
+    if (provider.provide && provider.useClass) {
+      const dependencies = this.resolveDependencies(provider.useClass); // 递归处理
+      const classInstance = new provider.useClass(...dependencies); // 这里的useClass是一个类
+      this.providers.set(provider.provide, classInstance); // 保存
+    } else if (provider.provide && provider.useValue) { // 提供的是一个值
+      this.providers.set(provider.provide, provider.useValue);
+    } else if(provider.provide && provider.useFactory) {
+      const inject = provider.inject ?? []; // 取得对应的参数
+      this.providers.set(provider.provide, provider.useFactory(...inject.map(this.getProviderByToken))); // 此处的函数可能也要注入参数
+    }else {
+      // 提供的是一个类，直接实例化，将本身作为token
+      const dependencies = this.resolveDependencies(provider);
+      this.providers.set(provider, new provider(...dependencies));
+    }
+  }
+
   use(middleware: any) {
     // 使用express实例的use方法，将中间件注册到express实例上
     this.expressApp.use(middleware);

@@ -2,7 +2,9 @@ import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { UserController } from "./user.controller";
 import { LoggerClassService,LoggerService,UseValueService,UseFactory } from "./logger.service";
+import { OtherModule } from "./other.module";
 @Module({
+  import: [ OtherModule ], // 导入其他模块
   controllers: [AppController,UserController],
   providers: [ // 注册服务
     {
