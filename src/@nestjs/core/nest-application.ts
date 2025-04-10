@@ -24,30 +24,14 @@ export class NestApplication {
     // 遍历所有导入的模块
     const imports = Reflect.getMetadata('imports', this.module) ?? []; // 取得导入的模块
     for (const module of imports) {
-      // 递归注册导入的模块
+      // 递归遍历导入的模块
       this.regiseterProvidersFromModule(module); // 注册导入的模块
     }
     const providers = Reflect.getMetadata('providers', this.module) ?? []; // 取得注入的providers
     for (const provider of providers) {
         this.addProvider(provider);
     }
-    /* for (const provider of providers) {
-      if (provider.provide && provider.useClass) { // 提供的是一个类,其中这里的provide啥都行，可以是类，字符串什么的，作为token存在
-        const dependencies = this.resolveDependencies(provider.useClass); // 递归处理
-        const classInstance = new provider.useClass(...dependencies); // 这里的useClass是一个类
-        this.providers.set(provider.provide, classInstance); // 保存
-      } else if (provider.provide && provider.useValue) { // 提供的是一个值
-        this.providers.set(provider.provide, provider.useValue);
-      } else if(provider.provide && provider.useFactory) {
-        const inject = provider.inject ?? []; // 取得对应的参数
-        this.providers.set(provider.provide, provider.useFactory(...inject.map(this.getProviderByToken))); // 此处的函数可能也要注入参数
-      }else {
-        // 提供的是一个类，直接实例化，将本身作为token
-        const dependencies = this.resolveDependencies(provider);
-        this.providers.set(provider, new provider(...dependencies));
-      }
-    } */
-  }
+  };
   private regiseterProvidersFromModule(module) {
     // 拿到导入的模块 providers 进行全量注册
     const importedProviders = Reflect.getMetadata('providers', module) ?? [];
