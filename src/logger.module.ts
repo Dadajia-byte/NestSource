@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { LoggerClassService, LoggerService, UseFactory, UseValueService } from "./logger.service";
 
 @Module({
-
   providers: [ // 注册服务
     {
       provide: 'SUFFIX',

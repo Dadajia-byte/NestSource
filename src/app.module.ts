@@ -4,8 +4,9 @@ import { UserController } from "./user.controller";
 import { CommonModule } from "./common.module";
 import { OtherModule } from "./other.module";
 import { LoggerModule } from "./logger.module";
+import { CoreModule } from "./core.module";
 @Module({
-  imports: [ OtherModule, LoggerModule ], // 导入其他模块
+  imports: [ OtherModule, LoggerModule, CoreModule ], // 导入其他模块
   controllers: [AppController,UserController],
 })
 export class AppModule {}
