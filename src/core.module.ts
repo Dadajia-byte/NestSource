@@ -4,5 +4,5 @@ import { CommonModule } from "./common.module";
 @Module({
   imports: [CommonModule],
   exports: [CommonModule],
-});
+})
 export class CoreModule {}

@@ -12,10 +12,9 @@ export function Module(metadata:ModuleMetadata): ClassDecorator {
     // 给模块类添加元数据 AppModule, 元数据名字叫controllers，值是controllers数组[AppController]
     Reflect.defineMetadata('controllers', metadata.controllers, target);
     defineModule(target, metadata.controllers);
-
     // 给模块类添加元数据 AppModule, 元数据名字叫providers，值是providers数组[LoggerService]
     Reflect.defineMetadata('providers', metadata.providers, target);
-    let providers = (metadata.providers??[]).filter(Boolean).map(provider => {
+    let providers = (metadata.providers??[]).map(provider => {
       if (provider instanceof Function) {
         return provider;
       } else if (provider.useClass instanceof Function) {
@@ -23,7 +22,7 @@ export function Module(metadata:ModuleMetadata): ClassDecorator {
       } else {
         return null;
       }
-    });
+    }).filter(Boolean);
     defineModule(target, providers);
 
     // 当一个类使用Module装饰器的时候，可以添加标识它是一个模块的元数据

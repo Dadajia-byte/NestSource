@@ -44,7 +44,7 @@ export class NestApplication {
         // 执行递归操作
         this.regiseterProvidersFromModule(exportsToken);
       } else {
-        const provider = importedProviders.find((item) => item.provide === exportsToken || provider.provide); // 找到对应的provider
+        const provider = importedProviders.find((provider) => provider.provide === exportsToken || provider === exportsToken); // 找到对应的provider
         if (provider) {
           this.addProvider(provider);
         }

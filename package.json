@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "scripts": {
     "start": "ts-node -r tsconfig-paths/register ./src/main.ts",
     "start:dev": "nodemon"
