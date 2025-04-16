@@ -9,6 +9,8 @@ export class NestApplication {
   private readonly providerInstances = new Map();
   // 记录每个模块的provider的token
   private readonly moduleProviders = new Map();
+  // 此处存储全局的provider
+  private readonly globalProviders = new Set();
   constructor(protected readonly module) {
     // 用来将JSON格式的请求体对象绑定到req.body上
     this.expressApp.use(express.json()); // 使用express内置的json中间件
@@ -35,6 +37,7 @@ export class NestApplication {
     }
   };
   private regiseterProvidersFromModule(module, ...parentsModules) {
+    const global = Reflect.getMetadata('isGlobal', module);
     // 拿到导入的模块 providers 进行全量注册
     const importedProviders = Reflect.getMetadata('providers', module) ?? [];
     // 1. 有可能导入的模块只导出了一部分，并没有全量导出，所以需要使用exports进行过滤
@@ -49,7 +52,7 @@ export class NestApplication {
         const provider = importedProviders.find((provider) => provider.provide === exportsToken || provider === exportsToken); // 找到对应的provider
         if (provider) {
           [module, ...parentsModules].forEach(module=>{
-            this.addProvider(provider, module);
+            this.addProvider(provider, module, global);
           })
         }
       }
@@ -65,12 +68,16 @@ export class NestApplication {
    * @param module 
    * @description 这里通过 providerInstance 存储所有的 provider实例，使用moduleProviders存储实例与模块的存储关系
    */
-  addProvider(provider, module) {
-    // 如果当前模块还未创建provider集合，则先创建一个
+  addProvider(provider, module, global = false) {
+    const providers = global ? this.globalProviders : (this.moduleProviders.get(module) || new Set());
     if (!this.moduleProviders.has(module)) {
-      this.moduleProviders.set(module, new Set());
+      this.moduleProviders.set(module, providers);
     }
-    const providers = this.moduleProviders.get(module);
+    const injectToken = provider.provide ?? provider; // 取得provider的token
+    if (this.providerInstances.has(injectToken)) {
+      providers.add(injectToken); // 如果实例池中已经存在，则直接放入返回
+      return;
+    }
     // 为了避免循环依赖，每次添加前做一个判断，如果map中已经存在了，则直接返回
     // const injectedToken = provider.provide ?? provider;
     // if (this.providers.has(injectedToken)) return;
@@ -103,9 +110,16 @@ export class NestApplication {
   private getProviderByToken(injectedToken, module) {
     // 如何通过token在特定模块下找对应的provider
     // 先找到此模块下对应的token set，再判断此injectedToken在不在此set中，如果存在，返回对应的provider实例
-    if(this.moduleProviders.get(module)?.has(injectedToken)) {
+    // 优先从当前模块查找
+    const moduleProviders = this.moduleProviders.get(module);
+    if (moduleProviders?.has(injectedToken)) {
       return this.providerInstances.get(injectedToken);
     }
+    // 再从全局查找
+    if (this.globalProviders.has(injectedToken)) {
+      return this.providerInstances.get(injectedToken);
+    }
+    return null; // 如果找不到，返回 null
   }
   private resolveDependencies(Class) {
     const injectedTokens = Reflect.getMetadata(INJECT_TOKENS, Class) ?? []; // 取得注入的token

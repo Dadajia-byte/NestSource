@@ -39,3 +39,9 @@ export function defineModule(nestModule, targets=[]) {
     Reflect.defineMetadata('nestModule', nestModule, target);
   })
 }
+
+export function Global() {
+  return (target:Function)=>{
+    Reflect.defineMetadata('isGlobal', true, target);
+  }
+}

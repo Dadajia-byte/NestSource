@@ -6,7 +6,7 @@ import { OtherModule } from "./other.module";
 import { LoggerModule } from "./logger.module";
 import { CoreModule } from "./core.module";
 @Module({
-  imports: [ OtherModule, LoggerModule, CoreModule ], // 导入其他模块
-  controllers: [AppController,UserController],
+  imports: [ CommonModule, OtherModule/* LoggerModule */ ], // 导入其他模块
+  controllers: [AppController/* , UserController */],
 })
 export class AppModule {}
